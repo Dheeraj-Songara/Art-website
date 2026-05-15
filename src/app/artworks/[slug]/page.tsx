@@ -14,10 +14,6 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export async function generateStaticParams() {
-  const artworks = await getPublishedArtworks();
-  return artworks.map((artwork) => ({ slug: artwork.slug }));
-}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
