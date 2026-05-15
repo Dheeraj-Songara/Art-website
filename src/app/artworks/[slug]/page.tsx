@@ -7,6 +7,7 @@ import { InquiryForm } from "@/components/site/inquiry-form";
 import { getArtworkBySlug, getPublishedArtworks } from "@/lib/cms/queries";
 import { formatMoney } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
 type PageProps = {
