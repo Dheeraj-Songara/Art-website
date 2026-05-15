@@ -52,7 +52,7 @@ function getDriftAnimation(index: number) {
     transition: {
       duration: dur,
       repeat: Infinity,
-      ease: "easeInOut",
+      ease: "easeInOut" as const,
       delay: index * 0.7,   // tighter stagger so they desync quickly
     },
   };
@@ -194,7 +194,7 @@ export function FloatingGallery({
            * No scale, no rotate, no y movement large enough to show gaps.
            */
           animate={{ x: [0, 8, 0, -8, 0], y: [0, -6, 4, -4, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" as const }}
         >
           <ArtworkImage artwork={featured} priority sizes="(min-width: 768px) 44vw, 82vw" />
 
