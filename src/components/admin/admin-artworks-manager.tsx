@@ -19,7 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Check, GripVertical, ImagePlus, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, useTransition, useCallback } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { ArtworkImage } from "@/components/site/artwork-image";
 import {
   deleteArtworkAction,
