@@ -23,6 +23,7 @@ export function mapArtwork(row: RecordLike): Artwork {
 
   return {
     id: String(row.id),
+    images: [],
     slug: String(row.slug ?? ""),
     title: String(row.title ?? ""),
     description: String(row.description ?? ""),
