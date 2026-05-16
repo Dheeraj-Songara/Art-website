@@ -2,28 +2,26 @@ import { NextResponse } from "next/server";
 import { assertAdminForMutation } from "@/lib/auth";
 import { cloudinaryDeliveryUrl, configureCloudinary, isCloudinaryConfigured } from "@/lib/cloudinary";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
     await assertAdminForMutation();
-
     if (!isCloudinaryConfigured()) {
       return NextResponse.json(
         { ok: false, message: "Cloudinary is not configured." },
         { status: 500 }
       );
     }
-
     const formData = await request.formData();
     const file = formData.get("file");
-
     if (!(file instanceof File)) {
       return NextResponse.json({ ok: false, message: "No image file provided." }, { status: 400 });
     }
-
     if (!file.type.startsWith("image/")) {
       return NextResponse.json({ ok: false, message: "Uploads must be images." }, { status: 400 });
     }
-
     const cloudinary = configureCloudinary();
     if (!cloudinary) {
       return NextResponse.json(
@@ -31,10 +29,8 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
     const result = await new Promise<{
       public_id: string;
       secure_url: string;
@@ -63,10 +59,8 @@ export async function POST(request: Request) {
           resolve(uploadResult);
         }
       );
-
       stream.end(buffer);
     });
-
     return NextResponse.json({
       ok: true,
       imageUrl: cloudinaryDeliveryUrl(result.public_id, { width: 1800, crop: "limit" }) ?? result.secure_url,
