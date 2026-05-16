@@ -40,7 +40,8 @@ type UploadState = {
 const emptyUpload: UploadState = {
   imageUrl: "",
   imagePublicId: "",
-  thumbnailUrl: ""
+  thumbnailUrl: "",
+  images: []
 };
 
 const previewArtwork: Artwork = {
@@ -235,11 +236,12 @@ export function AdminArtworksManager({
       return;
     }
 
-    setUpload({
-      imageUrl: result.imageUrl,
+    setUpload((prev) => ({
+      imageUrl: prev.imageUrl || result.imageUrl,
       imagePublicId: result.imagePublicId,
-      thumbnailUrl: result.thumbnailUrl
-    });
+      thumbnailUrl: result.thumbnailUrl,
+      images: [...prev.images, result.imageUrl]
+    }));
     setMessage("Image uploaded and optimized.");
   }
 
@@ -368,18 +370,22 @@ export function AdminArtworksManager({
             <input
               ref={fileRef}
               type="file"
+              multiple
               accept="image/*"
               className="hidden"
               onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) {
+                
+                const files = Array.from(event.target.files || []);
+
+                  files.forEach((file) => {
                   void handleUpload(file);
-                }
+                });
               }}
             />
             <input type="hidden" name="imageUrl" value={upload.imageUrl} />
             <input type="hidden" name="imagePublicId" value={upload.imagePublicId} />
             <input type="hidden" name="thumbnailUrl" value={upload.thumbnailUrl} />
+            <input type="hidden" name="images" value={JSON.stringify(upload.images)} />
             <div className="mt-4">
               <label className="admin-label" htmlFor="gradientIndex">
                 Fallback gradient index
