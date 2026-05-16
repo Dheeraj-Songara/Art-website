@@ -34,6 +34,7 @@ type UploadState = {
   imageUrl: string;
   imagePublicId: string;
   thumbnailUrl: string;
+  images: string[];
 };
 
 const emptyUpload: UploadState = {
