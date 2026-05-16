@@ -165,6 +165,7 @@ export function AdminArtworksManager({
   const [message, setMessage] = useState("");
   const [upload, setUpload] = useState<UploadState>(emptyUpload);
   const [pending, startTransition] = useTransition();
+  const [uploadingCount, setUploadingCount] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const sensors = useSensors(
@@ -191,7 +192,9 @@ export function AdminArtworksManager({
     setUpload({
       imageUrl: artwork.imageUrl ?? "",
       imagePublicId: artwork.imagePublicId ?? "",
-      thumbnailUrl: artwork.thumbnailUrl ?? ""
+      thumbnailUrl: artwork.thumbnailUrl ?? "",
+      // FIX: was missing images array
+      images: artwork.images ?? []
     });
     setShowForm(true);
     setMessage("");
@@ -221,8 +224,10 @@ export function AdminArtworksManager({
     });
   }
 
-  async function handleUpload(file: File) {
-    setMessage("Uploading image to Cloudinary...");
+  // FIX: Upload a single file and merge its result into state alongside any
+  // previously uploaded images, rather than overwriting state with the wrong
+  // variable (`artwork` which was undefined).
+  async function handleUpload(file: File, isFirst: boolean) {
     const body = new FormData();
     body.set("file", file);
 
@@ -237,14 +242,45 @@ export function AdminArtworksManager({
       return;
     }
 
-   
-    setUpload({
-      imageUrl: artwork.imageUrl ?? "",
-      imagePublicId: artwork.imagePublicId ?? "",
-      thumbnailUrl: artwork.thumbnailUrl ?? "",
-      images: artwork.images ?? []
+    setUpload((prev) => {
+      // The first uploaded file becomes the primary image; subsequent files
+      // are appended to the `images` extras array.
+      const newImages = result.imageUrl
+        ? [...(prev.images ?? []), result.imageUrl]
+        : prev.images ?? [];
+
+      if (isFirst) {
+        return {
+          imageUrl: result.imageUrl,
+          imagePublicId: result.imagePublicId,
+          thumbnailUrl: result.thumbnailUrl,
+          images: newImages
+        };
+      }
+
+      return {
+        ...prev,
+        images: newImages
+      };
     });
-    setMessage("Image uploaded and optimized.");
+  }
+
+  // FIX: Upload all selected files in parallel, tracking progress with a
+  // counter so the message is accurate and state merges correctly.
+  async function handleFiles(files: File[]) {
+    if (files.length === 0) return;
+
+    setUploadingCount(files.length);
+    setMessage(`Uploading ${files.length} image${files.length > 1 ? "s" : ""} to Cloudinary…`);
+
+    // Reset images list before a fresh batch so we don't double-append when
+    // the user picks files a second time.
+    setUpload((prev) => ({ ...prev, images: [] }));
+
+    await Promise.all(files.map((file, index) => handleUpload(file, index === 0)));
+
+    setUploadingCount(0);
+    setMessage(`${files.length} image${files.length > 1 ? "s" : ""} uploaded and optimized.`);
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -259,6 +295,7 @@ export function AdminArtworksManager({
     formData.set("imageUrl", upload.imageUrl);
     formData.set("imagePublicId", upload.imagePublicId);
     formData.set("thumbnailUrl", upload.thumbnailUrl);
+    formData.set("images", JSON.stringify(upload.images));
 
     startTransition(async () => {
       const result = await saveArtworkAction(formData);
@@ -318,6 +355,14 @@ export function AdminArtworksManager({
     });
   }
 
+  // Remove a photo from the extras images list
+  function removeExtraImage(url: string) {
+    setUpload((prev) => ({
+      ...prev,
+      images: prev.images.filter((img) => img !== url)
+    }));
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -345,7 +390,9 @@ export function AdminArtworksManager({
       {showForm ? (
         <form onSubmit={handleSubmit} className="luxury-panel grid gap-7 p-5 xl:grid-cols-[0.8fr,1.2fr]">
           <div>
-            <label className="admin-label">Artwork image</label>
+            <label className="admin-label">Artwork images</label>
+
+            {/* Primary image picker */}
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
@@ -364,11 +411,13 @@ export function AdminArtworksManager({
               ) : (
                 <span className="flex flex-col items-center text-gallery-muted">
                   <ImagePlus size={32} className="mb-3 opacity-60" />
-                  <span className="text-sm">Upload image</span>
-                  <span className="mt-1 font-mono text-[11px]">Cloudinary f_auto / q_auto</span>
+                  <span className="text-sm">Upload images</span>
+                  <span className="mt-1 font-mono text-[11px]">Select one or more · Cloudinary f_auto / q_auto</span>
                 </span>
               )}
             </button>
+
+            {/* Hidden multi-file input */}
             <input
               ref={fileRef}
               type="file"
@@ -376,18 +425,62 @@ export function AdminArtworksManager({
               accept="image/*"
               className="hidden"
               onChange={(event) => {
-                
-                const files = Array.from(event.target.files || []);
-
-                  files.forEach((file) => {
-                  void handleUpload(file);
-                });
+                const files = Array.from(event.target.files ?? []);
+                if (files.length > 0) {
+                  void handleFiles(files);
+                }
+                // Reset so the same files can be re-selected if needed
+                event.target.value = "";
               }}
             />
+
             <input type="hidden" name="imageUrl" value={upload.imageUrl} />
             <input type="hidden" name="imagePublicId" value={upload.imagePublicId} />
             <input type="hidden" name="thumbnailUrl" value={upload.thumbnailUrl} />
             <input type="hidden" name="images" value={JSON.stringify(upload.images)} />
+
+            {/* Extra images strip */}
+            {upload.images.length > 0 ? (
+              <div className="mt-3">
+                <p className="admin-label mb-2">
+                  All photos ({upload.images.length})
+                  {uploadingCount > 0 ? (
+                    <span className="ml-2 font-mono text-[10px] text-gallery-accent">uploading…</span>
+                  ) : null}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {upload.images.map((url) => (
+                    <div key={url} className="group relative h-16 w-16 overflow-hidden rounded-[3px]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="" className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeExtraImage(url)}
+                        className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition group-hover:opacity-100"
+                        aria-label="Remove photo"
+                      >
+                        <Trash2 size={14} className="text-red-400" />
+                      </button>
+                      {url === upload.imageUrl ? (
+                        <span className="absolute bottom-0 left-0 right-0 bg-gallery-accent/80 text-center font-mono text-[9px] leading-4 text-black">
+                          Primary
+                        </span>
+                      ) : null}
+                    </div>
+                  ))}
+                  {/* Add more button */}
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex h-16 w-16 flex-col items-center justify-center rounded-[3px] border border-dashed border-white/10 text-gallery-muted transition hover:border-gallery-accent/40"
+                  >
+                    <Plus size={14} />
+                    <span className="mt-0.5 font-mono text-[9px]">Add</span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             <div className="mt-4">
               <label className="admin-label" htmlFor="gradientIndex">
                 Fallback gradient index
@@ -574,8 +667,8 @@ export function AdminArtworksManager({
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button type="submit" className="btn btn-accent" disabled={pending}>
-                {pending ? "Saving..." : "Save artwork"}
+              <button type="submit" className="btn btn-accent" disabled={pending || uploadingCount > 0}>
+                {pending ? "Saving..." : uploadingCount > 0 ? `Uploading ${uploadingCount}…` : "Save artwork"}
               </button>
               <button type="button" onClick={() => setShowForm(false)} className="btn btn-ghost">
                 Cancel
