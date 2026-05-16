@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
-import { ArtworkImage } from "@/components/site/artwork-image";
 import { InquiryForm } from "@/components/site/inquiry-form";
-import { getArtworkBySlug, getPublishedArtworks } from "@/lib/cms/queries";
+import { getArtworkBySlug } from "@/lib/cms/queries";
 import { formatMoney } from "@/lib/utils";
+import { ArtworkGallery } from "@/components/site/artwork-gallery";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
@@ -14,14 +14,11 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const artwork = await getArtworkBySlug(slug);
 
-  if (!artwork) {
-    return {};
-  }
+  if (!artwork) return {};
 
   return {
     title: artwork.seoTitle ?? artwork.title,
@@ -38,17 +35,21 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const artwork = await getArtworkBySlug(slug);
 
-  if (!artwork) {
-    notFound();
-  }
+  if (!artwork) notFound();
+
+  // Build full list of images: primary first, then extras (deduplicated)
+  const allImages = [
+    artwork.imageUrl,
+    ...(artwork.images ?? []).filter((img) => img !== artwork.imageUrl)
+  ].filter(Boolean) as string[];
 
   return (
     <main className="min-h-[calc(100vh-60px)]">
       <section className="grid gap-10 px-5 py-12 md:px-10 lg:grid-cols-[minmax(340px,0.95fr),1fr] lg:py-16">
-        <div className="relative min-h-[520px] overflow-hidden rounded shadow-[0_40px_100px_rgba(0,0,0,0.7)] lg:min-h-[720px]">
-          <ArtworkImage artwork={artwork} priority sizes="(min-width: 1024px) 48vw, 100vw" />
-        </div>
+        {/* Left: gallery */}
+        <ArtworkGallery images={allImages} title={artwork.title} />
 
+        {/* Right: info */}
         <div className="flex flex-col justify-center">
           <div className="mb-5 flex flex-wrap gap-2">
             <span className="tag">{artwork.category}</span>
@@ -67,33 +68,25 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
 
           <dl className="mt-10 grid grid-cols-2 gap-6 border-y border-gallery-line py-7 md:grid-cols-4">
             <div>
-              <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-gallery-muted">
-                Price
-              </dt>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-gallery-muted">Price</dt>
               <dd className="mt-1 font-mono text-[13px] text-gallery-accent">
                 {formatMoney(artwork.price, artwork.currency)}
               </dd>
             </div>
             <div>
-              <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-gallery-muted">
-                Dimensions
-              </dt>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-gallery-muted">Dimensions</dt>
               <dd className="mt-1 font-mono text-[13px] text-gallery-ink">
                 {artwork.dimensions ?? "Variable"}
               </dd>
             </div>
             <div>
-              <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-gallery-muted">
-                Status
-              </dt>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-gallery-muted">Status</dt>
               <dd className="mt-1 font-mono text-[13px] capitalize text-gallery-ink">
                 {artwork.availability}
               </dd>
             </div>
             <div>
-              <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-gallery-muted">
-                Collection
-              </dt>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-gallery-muted">Collection</dt>
               <dd className="mt-1 font-mono text-[13px] text-gallery-ink">
                 {artwork.collectionTitle ?? artwork.category}
               </dd>
