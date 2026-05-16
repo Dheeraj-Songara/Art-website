@@ -237,12 +237,13 @@ export function AdminArtworksManager({
       return;
     }
 
-    setUpload((prev) => ({
-      imageUrl: prev.imageUrl || result.imageUrl,
-      imagePublicId: result.imagePublicId,
-      thumbnailUrl: result.thumbnailUrl,
-      images: [...prev.images, result.imageUrl]
-    }));
+   
+    setUpload({
+      imageUrl: artwork.imageUrl ?? "",
+      imagePublicId: artwork.imagePublicId ?? "",
+      thumbnailUrl: artwork.thumbnailUrl ?? "",
+      images: artwork.images ?? []
+    });
     setMessage("Image uploaded and optimized.");
   }
 
