@@ -212,28 +212,7 @@ export function FloatingGallery({
         </motion.button>
       </div>
 
-      {/* Filmstrip */}
-      <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/75 to-transparent px-4 pb-4 pt-16">
-        <div className="filmstrip">
-          {artworks.map((artwork) => (
-            <button
-              key={artwork.id}
-              type="button"
-              aria-label={`Open ${artwork.title}`}
-              onClick={() => setSelected(artwork)}
-              className="relative h-[58px] w-[76px] shrink-0 overflow-hidden rounded-[2px] border transition hover:-translate-y-1 hover:opacity-100"
-              style={{
-                opacity: artwork.featured ? 1 : 0.55,
-                borderColor: artwork.featured
-                  ? "rgba(79,209,197,0.55)"
-                  : "rgba(255,255,255,0.06)",
-              }}
-            >
-              <ArtworkImage artwork={artwork} sizes="76px" />
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       <ArtworkModal
         artwork={selected}
