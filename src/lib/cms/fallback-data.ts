@@ -68,7 +68,8 @@ const baseArtwork = {
   seoTitle: null,
   seoDescription: null,
   createdAt: null,
-  updatedAt: null
+  updatedAt: null,
+  images: []
 };
 
 export const fallbackArtworks: Artwork[] = [
