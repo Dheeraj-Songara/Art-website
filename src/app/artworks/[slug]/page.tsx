@@ -45,7 +45,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
 
   return (
     <main className="min-h-[calc(100vh-60px)]">
-      <section className="grid gap-10 px-5 py-12 md:px-10 lg:grid-cols-[minmax(340px,0.95fr),1fr] lg:py-16">
+      <section className="grid gap-10 px-5 py-12 md:px-10 lg:grid-cols-[minmax(340px,0.95fr),1fr] lg:py-16 items-start">
         {/* Left: gallery */}
         <ArtworkGallery images={allImages} title={artwork.title} />
 
