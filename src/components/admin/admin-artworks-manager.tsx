@@ -19,7 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Check, GripVertical, ImagePlus, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition, useCallback } from "react";
 import { ArtworkImage } from "@/components/site/artwork-image";
 import {
   deleteArtworkAction,
@@ -166,6 +166,7 @@ export function AdminArtworksManager({
   const [upload, setUpload] = useState<UploadState>(emptyUpload);
   const [pending, startTransition] = useTransition();
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const sensors = useSensors(
@@ -392,11 +393,21 @@ export function AdminArtworksManager({
           <div>
             <label className="admin-label">Artwork images</label>
 
-            {/* Primary image picker */}
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden border-2 border-dashed border-white/10 bg-white/[0.02] transition hover:border-gallery-accent/40"
+            {/* Drag-and-drop zone with opacity-0 input overlay for reliable multi-select */}
+            <div
+              className={`relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden border-2 border-dashed transition ${
+                isDraggingOver
+                  ? "border-gallery-accent bg-gallery-accent/10"
+                  : "border-white/10 bg-white/[0.02] hover:border-gallery-accent/40"
+              }`}
+              onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
+              onDragLeave={() => setIsDraggingOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDraggingOver(false);
+                const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+                if (files.length > 0) void handleFiles(files);
+              }}
             >
               {upload.imageUrl || editing?.imageUrl ? (
                 <ArtworkImage
@@ -409,30 +420,26 @@ export function AdminArtworksManager({
                   sizes="(min-width: 1280px) 34vw, 90vw"
                 />
               ) : (
-                <span className="flex flex-col items-center text-gallery-muted">
+                <span className="pointer-events-none flex flex-col items-center text-gallery-muted">
                   <ImagePlus size={32} className="mb-3 opacity-60" />
-                  <span className="text-sm">Upload images</span>
-                  <span className="mt-1 font-mono text-[11px]">Select one or more · Cloudinary f_auto / q_auto</span>
+                  <span className="text-sm">{isDraggingOver ? "Drop to upload" : "Click or drag images here"}</span>
+                  <span className="mt-1 font-mono text-[11px]">Multiple files supported · Cloudinary f_auto / q_auto</span>
                 </span>
               )}
-            </button>
-
-            {/* Hidden multi-file input */}
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              accept="image/*"
-              className="hidden"
-              onChange={(event) => {
-                const files = Array.from(event.target.files ?? []);
-                if (files.length > 0) {
-                  void handleFiles(files);
-                }
-                // Reset so the same files can be re-selected if needed
-                event.target.value = "";
-              }}
-            />
+              {/* opacity-0 overlay input — visible-but-transparent inputs respect the `multiple` attribute reliably across all browsers */}
+              <input
+                ref={fileRef}
+                type="file"
+                multiple
+                accept="image/*"
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                onChange={(event) => {
+                  const files = Array.from(event.target.files ?? []);
+                  if (files.length > 0) void handleFiles(files);
+                  event.target.value = "";
+                }}
+              />
+            </div>
 
             <input type="hidden" name="imageUrl" value={upload.imageUrl} />
             <input type="hidden" name="imagePublicId" value={upload.imagePublicId} />
