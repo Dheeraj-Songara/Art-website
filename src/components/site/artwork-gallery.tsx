@@ -20,7 +20,6 @@ export function ArtworkGallery({ images, title }: Props) {
     setLightbox((i) => (i === null ? null : (i + 1) % images.length));
   }, [images.length]);
 
-  // Keyboard navigation
   useEffect(() => {
     if (lightbox === null) return;
     function onKey(e: KeyboardEvent) {
@@ -32,7 +31,6 @@ export function ArtworkGallery({ images, title }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [lightbox, prev, next]);
 
-  // Lock body scroll when lightbox open
   useEffect(() => {
     document.body.style.overflow = lightbox !== null ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -40,23 +38,23 @@ export function ArtworkGallery({ images, title }: Props) {
 
   return (
     <>
-      {/* Main image — object-contain so nothing is cropped */}
       <div className="flex flex-col gap-3">
+        {/* Main image */}
         <button
           type="button"
           onClick={() => setLightbox(active)}
-          className="relative min-h-[520px] w-full overflow-hidden rounded bg-black/20 shadow-[0_40px_100px_rgba(0,0,0,0.7)] lg:min-h-[720px] cursor-zoom-in"
+          className="relative w-full overflow-hidden rounded bg-black/20 shadow-[0_40px_100px_rgba(0,0,0,0.7)] cursor-zoom-in"
+          style={{ aspectRatio: "3/4" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={images[active]}
             alt={title}
-            className="h-full w-full object-contain"
-            style={{ position: "absolute", inset: 0 }}
+            className="absolute inset-0 h-full w-full object-contain"
           />
         </button>
 
-        {/* Thumbnail strip — only shown when there are multiple images */}
+        {/* Thumbnail strip */}
         {images.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-1">
             {images.map((url, i) => (
@@ -64,7 +62,7 @@ export function ArtworkGallery({ images, title }: Props) {
                 key={url}
                 type="button"
                 onClick={() => setActive(i)}
-                className={`relative h-16 w-16 flex-shrink-0 overflow-hidden rounded transition ${
+                className={`relative h-14 w-14 flex-shrink-0 overflow-hidden rounded transition ${
                   i === active
                     ? "ring-2 ring-gallery-accent ring-offset-1 ring-offset-black"
                     : "opacity-50 hover:opacity-80"
@@ -84,7 +82,6 @@ export function ArtworkGallery({ images, title }: Props) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
           onClick={() => setLightbox(null)}
         >
-          {/* Close */}
           <button
             type="button"
             onClick={() => setLightbox(null)}
@@ -93,7 +90,6 @@ export function ArtworkGallery({ images, title }: Props) {
             <X size={20} />
           </button>
 
-          {/* Prev */}
           {images.length > 1 && (
             <button
               type="button"
@@ -104,7 +100,6 @@ export function ArtworkGallery({ images, title }: Props) {
             </button>
           )}
 
-          {/* Image */}
           <div
             className="relative max-h-[90vh] max-w-[90vw]"
             onClick={(e) => e.stopPropagation()}
@@ -122,7 +117,6 @@ export function ArtworkGallery({ images, title }: Props) {
             )}
           </div>
 
-          {/* Next */}
           {images.length > 1 && (
             <button
               type="button"
