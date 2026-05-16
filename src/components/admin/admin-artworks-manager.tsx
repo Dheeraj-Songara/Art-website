@@ -71,7 +71,8 @@ const previewArtwork: Artwork = {
   seoTitle: null,
   seoDescription: null,
   createdAt: null,
-  updatedAt: null
+  updatedAt: null,
+  images: []
 };
 
 function SortableArtworkRow({
