@@ -61,6 +61,7 @@ export async function saveArtworkAction(formData: FormData): Promise<AdminAction
       image_url: toNullableString(formData.get("imageUrl")),
       image_public_id: toNullableString(formData.get("imagePublicId")),
       thumbnail_url: toNullableString(formData.get("thumbnailUrl")),
+      images: JSON.parse(String(formData.get("images") ?? "[]")),
       blur_data_url: toNullableString(formData.get("blurDataUrl")),
       featured: formData.get("featured") === "on",
       homepage_featured: formData.get("homepageFeatured") === "on",
