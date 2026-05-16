@@ -16,6 +16,7 @@ export type Artwork = {
   availability: Availability;
   buyLink: string | null;
   imageUrl: string | null;
+  images: string[] | null;
   imagePublicId: string | null;
   thumbnailUrl: string | null;
   blurDataUrl: string | null;
